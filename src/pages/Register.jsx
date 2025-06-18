@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { useAuth } from "../context/AuthContext"
+import axios from "axios"
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +11,6 @@ const Register = () => {
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const { register } = useAuth()
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -40,12 +39,21 @@ const Register = () => {
       return
     }
 
-    const result = await register(name, email, password)
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/register`, {
+        name,
+        email,
+        password,
+      })
 
-    if (result.success) {
+      const { token, user } = res.data
+      localStorage.setItem("token", token)
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
+      localStorage.setItem("user", JSON.stringify(user))
+
       navigate("/")
-    } else {
-      setError(result.message)
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed")
     }
 
     setLoading(false)
